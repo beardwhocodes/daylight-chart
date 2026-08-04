@@ -953,27 +953,22 @@ function App() {
               Built for informational purposes. Times are estimates, not legal or navigational advice.
             </p>
             <div className="flex items-center gap-4">
-              <span>
-                Built by{" "}
+              {/* The mark and the name are one link. Two adjacent anchors to the
+                  same URL read as duplicates to a screen reader. */}
+              <span className="inline-flex items-center gap-1.5">
+                Built by
                 <a
-                  href="https://beardwho.codes"
+                  href={X_URL}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="hover:text-foreground transition-colors"
+                  aria-label="@beardwhocodes on X"
+                  title="@beardwhocodes on X"
+                  className="hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
                 >
+                  <XIcon className="size-[13px]" />
                   beardwho.codes
                 </a>
               </span>
-              <a
-                href={X_URL}
-                target="_blank"
-                rel="noreferrer noopener"
-                aria-label="@beardwhocodes on X"
-                title="@beardwhocodes on X"
-                className="hover:text-foreground transition-colors"
-              >
-                <XIcon className="size-[15px]" />
-              </a>
               <a
                 href={REPO_URL}
                 target="_blank"
