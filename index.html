@@ -3,18 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#141419" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141419" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fcfcfd" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta
       name="description"
       content="Compare a year of sunrise and sunset times under current US law, permanent daylight saving time, and permanent standard time."
     />
     <link rel="canonical" href="https://whatifdst.com/" />
+
+    <!-- Absolute URLs throughout: crawlers resolve these off their own host, not
+         the page's, so a relative path resolves to nothing. -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="What If DST?" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://whatifdst.com/" />
     <meta property="og:title" content="What If DST? — See permanent daylight saving time in your city" />
     <meta property="og:description" content="Compare a year of sunrise and sunset times under current US law, permanent daylight saving time, and permanent standard time." />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://whatifdst.com/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A year of sunrise and sunset times for Washington, DC, with today's clock as solid lines and permanent daylight saving time as dashed lines." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@beardwhocodes" />
+    <meta name="twitter:creator" content="@beardwhocodes" />
+    <meta name="twitter:title" content="What If DST? — See permanent daylight saving time in your city" />
+    <meta name="twitter:description" content="Compare a year of sunrise and sunset times under current US law, permanent daylight saving time, and permanent standard time." />
+    <meta name="twitter:image" content="https://whatifdst.com/og.png" />
+    <meta name="twitter:image:alt" content="A year of sunrise and sunset times for Washington, DC, with today's clock as solid lines and permanent daylight saving time as dashed lines." />
+
     <title>What If DST? — See permanent daylight saving time in your city</title>
     <script>
       // Applied before first paint so the page never flashes the wrong theme.
