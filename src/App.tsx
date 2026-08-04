@@ -404,6 +404,26 @@ function App() {
                       : { ...current, places: [...current.places, place].slice(0, 4), hiddenSeries: [] },
                   )
                 }
+                onReplace={(id, place) =>
+                  setSettings((current) =>
+                    // Picking a city that already fills another slot would
+                    // duplicate it, so leave the settings alone.
+                    current.places.some((existing) => existing.id === place.id && existing.id !== id)
+                      ? current
+                      : {
+                          ...current,
+                          places: current.places.map((existing) =>
+                            existing.id === id ? place : existing,
+                          ),
+                          // A series key starts with the place id, so anything
+                          // hidden for the old place would linger and hide
+                          // nothing once that place is gone.
+                          hiddenSeries: current.hiddenSeries.filter(
+                            (key) => !key.startsWith(`${id}|`),
+                          ),
+                        },
+                  )
+                }
                 onRemove={(id) =>
                   setSettings((current) => ({
                     ...current,
