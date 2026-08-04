@@ -14,10 +14,19 @@ export interface MoonState {
   /** Illuminated fraction of the disc: 0 at new moon, 1 at full. */
   fraction: number;
   waxing: boolean;
+  /**
+   * Where the lit edge points, in degrees clockwise on screen, for a glyph
+   * drawn with its bright limb toward positive x. The moon's crescent is not
+   * upright: it rotates through the night and tips into a bowl near the
+   * horizon, because the lit edge always faces the sun.
+   */
+  limbRotation: number;
 }
 
-export interface MoonHighlight extends MoonState {
+export interface MoonSample extends MoonState {
   clockMinute: number;
+  /** The sun at the same moment. A daytime moon is up but washed out. */
+  sunAltitude: number;
 }
 
 /**
@@ -87,34 +96,44 @@ export function moonAt(
   const at = instantForClock(place, isoDate, year, scenario, clockMinute);
   const position = SunCalc.getMoonPosition(at, place.latitude, place.longitude);
   const illumination = SunCalc.getMoonIllumination(at);
+  // `angle` is the bright limb read from the disc's north point; subtracting the
+  // parallactic angle turns it into an angle from the observer's zenith,
+  // measured anticlockwise. A glyph drawn with its limb toward +x already sits
+  // 90 degrees clockwise of "up", so that offset comes back out here.
+  const zenith = (illumination.angle - position.parallacticAngle) * RAD_TO_DEG;
   return {
     altitude: position.altitude * RAD_TO_DEG,
     fraction: illumination.fraction,
     // SunCalc phase runs 0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter.
     waxing: illumination.phase < 0.5,
+    limbRotation: -zenith - 90,
   };
 }
 
 /**
- * Where the moon is worth drawing: its highest point on this date, provided it
- * is up and the sky is dark enough to see it. Sampled rather than solved,
- * because a coarse scan is exact enough to place a glyph.
+ * The moon's path across the day, at the same hourly cadence as the sun. Every
+ * hour it is above the horizon is reported, daylight included — the moon really
+ * is up in the afternoon sky, it is simply hard to see. Callers decide how to
+ * show that using `sunAltitude`.
  */
-export function moonHighlight(
+export function moonTrack(
   place: Place,
   isoDate: string,
   year: number,
   scenario: Scenario,
-  stepMinutes = 10,
-): MoonHighlight | null {
-  let best: MoonHighlight | null = null;
+  stepMinutes = 60,
+): MoonSample[] {
+  const track: MoonSample[] = [];
   for (let minute = 0; minute < 1440; minute += stepMinutes) {
-    if (sunAltitude(place, isoDate, year, scenario, minute) > -6) continue;
     const state = moonAt(place, isoDate, year, scenario, minute);
     if (state.altitude <= 0) continue;
-    if (!best || state.altitude > best.altitude) best = { ...state, clockMinute: minute };
+    track.push({
+      ...state,
+      clockMinute: minute,
+      sunAltitude: sunAltitude(place, isoDate, year, scenario, minute),
+    });
   }
-  return best;
+  return track;
 }
 
 /**

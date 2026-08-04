@@ -3,7 +3,8 @@ import { formatMinute, SCENARIO_LABELS } from "@/lib/daylight";
 import {
   HORIZON_DEG,
   maxAnnualAltitude,
-  moonHighlight,
+  moonAt,
+  moonTrack,
   sunAltitude,
 } from "@/lib/sun-path";
 import type { Place, Scenario } from "@/types";
@@ -50,6 +51,7 @@ const PLOT_W = W - PAD_X * 2;
 // Everything below this is uniformly night, so clipping there costs no
 // information and buys height for the part worth reading.
 const ALT_LO = -22;
+const MOON_R = 8;
 
 const x = (minute: number) => PAD_X + (minute / 1440) * PLOT_W;
 
@@ -103,14 +105,36 @@ export function SunPathPanel({
       return { hour, altitude, up: altitude > HORIZON_DEG };
     }).filter((entry) => entry.altitude > ALT_LO - 2);
 
-    // Drawn at its true altitude, but kept clear of the edges so the disc is
-    // never sliced in half. A winter full moon really does ride near the top of
-    // the sky, which would otherwise put it straight through the panel border.
-    const moonState = moonHighlight(place, isoDate, year, "current");
-    const moon = moonState && {
-      ...moonState,
-      drawY: Math.max(TOP + 18, Math.min(TOP + PLOT_H - 18, y(moonState.altitude))),
-    };
+    // The moon gets the same treatment as the sun: its own arc, marked hourly.
+    // No position is clamped — a glyph near the top or bottom shrinks to fit
+    // instead of sliding to where the moon is not, and one with no room left is
+    // dropped rather than sliced.
+    const moonHours = moonTrack(place, isoDate, year, "current").flatMap((sample) => {
+      const cy = y(sample.altitude);
+      const radius = Math.min(MOON_R, cy - TOP - 1, TOP + PLOT_H - cy - 1);
+      if (radius < 3) return [];
+      return [{
+        ...sample,
+        cx: x(sample.clockMinute),
+        cy,
+        radius,
+        // The moon is up in the afternoon as often as at midnight; it is simply
+        // washed out. Fade it toward daylight rather than pretend it is absent.
+        opacity: sample.sunAltitude < -6 ? 1 : sample.sunAltitude > 0 ? 0.32 : 0.65,
+      }];
+    });
+
+    const moonArc = (() => {
+      let d = "";
+      let open = false;
+      for (let minute = 0; minute <= 1440; minute += 8) {
+        const altitude = moonAt(place, isoDate, year, "current", minute).altitude;
+        if (altitude <= HORIZON_DEG) { open = false; continue; }
+        d += (open ? "L" : "M") + x(minute).toFixed(1) + " " + clamp(y(altitude)).toFixed(1);
+        open = true;
+      }
+      return d;
+    })();
 
     const stars: Array<{ cx: number; cy: number; r: number; opacity: number }> = [];
     const horizonY = y(HORIZON_DEG);
@@ -137,7 +161,7 @@ export function SunPathPanel({
             compare: sunAltitude(place, isoDate, year, compare, alarmMinute),
           };
 
-    return { altHi, y, horizonY, arc, hourlySun, moon, stars, alarm };
+    return { altHi, y, horizonY, arc, hourlySun, moonHours, moonArc, stars, alarm };
   }, [alarmMinute, compare, isoDate, place, year]);
 
   const { y, horizonY, altHi } = view;
@@ -157,7 +181,7 @@ export function SunPathPanel({
         viewBox={`0 0 ${W} ${H}`}
         className="block h-auto w-full"
         role="img"
-        aria-label={`The sun's path on ${dateLabel} in ${place.city}, ${place.state}, under current law and ${SCENARIO_LABELS[compare]}.`}
+        aria-label={`The sun's path on ${dateLabel} in ${place.city}, ${place.state}, under current law and ${SCENARIO_LABELS[compare]}, with the moon's path marked each hour it is above the horizon.`}
       >
         <defs>
           <radialGradient id={glowId}>
@@ -178,17 +202,21 @@ export function SunPathPanel({
             <circle key={index} cx={star.cx} cy={star.cy} r={star.r} fill={SKY.hair} opacity={star.opacity} />
           ))}
 
-          {view.moon && (
-            <g>
-              <circle cx={x(view.moon.clockMinute)} cy={view.moon.drawY} r={34} fill={`url(#${glowId})`} opacity={0.16 * view.moon.fraction} />
-              <circle cx={x(view.moon.clockMinute)} cy={view.moon.drawY} r={13} fill={SKY.moonShadow} />
-              <path
-                d={moonPath(x(view.moon.clockMinute), view.moon.drawY, 13, view.moon.fraction)}
-                fill={SKY.moon}
-                transform={view.moon.waxing ? undefined : `translate(${2 * x(view.moon.clockMinute)} 0) scale(-1 1)`}
-              />
-            </g>
+          {view.moonArc && (
+            <path d={view.moonArc} fill="none" stroke={SKY.moon} strokeOpacity={0.22} strokeWidth={1.25} />
           )}
+
+          {view.moonHours.map((moon) => (
+            <g key={moon.clockMinute} opacity={moon.opacity}>
+              <circle cx={moon.cx} cy={moon.cy} r={moon.radius * 2.4} fill={`url(#${glowId})`} opacity={0.14 * moon.fraction} />
+              <circle cx={moon.cx} cy={moon.cy} r={moon.radius} fill={SKY.moonShadow} />
+              {/* Rotated so the lit edge faces the sun, which is why the crescent
+                  tips as the night goes on rather than standing upright. */}
+              <g transform={`rotate(${moon.limbRotation.toFixed(1)} ${moon.cx.toFixed(1)} ${moon.cy.toFixed(1)})`}>
+                <path d={moonPath(moon.cx, moon.cy, moon.radius, moon.fraction)} fill={SKY.moon} />
+              </g>
+            </g>
+          ))}
 
           {/* How far below its own annual maximum this day peaks. */}
           <line x1={PAD_X} x2={PAD_X + PLOT_W} y1={peakY} y2={peakY} stroke={SKY.hair} strokeWidth={1} strokeDasharray="2 6" opacity={0.3} />
