@@ -1,0 +1,42 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Lets you redeploy the current main without an empty commit.
+  workflow_dispatch:
+
+# A newer push makes an in-flight deploy obsolete, but let the running one
+# finish so a half-uploaded asset set never reaches production.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Gate the deploy on the type check and the tests. `npm run build`
+      # runs `tsc -b` first, so a type error fails here rather than shipping.
+      - run: npm test
+      - run: npm run build
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # dist/ is already built above; do not let the action rebuild it.
+          command: deploy
