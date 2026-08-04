@@ -21,6 +21,7 @@ import { DaylightChart } from "@/components/DaylightChart";
 import { LocationSearch } from "@/components/LocationSearch";
 import { SchedulePanel } from "@/components/SchedulePanel";
 import { SeriesControls, SeriesSwatch } from "@/components/SeriesControls";
+import { SunPathPanel } from "@/components/SunPathPanel";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,10 +48,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSettings, yearOptions } from "@/hooks/useSettings";
 import { useTheme } from "@/hooks/useTheme";
 import { chartPalette } from "@/lib/chart-theme";
+import { readChartView } from "@/lib/chart-variant";
 import {
   buildSeries,
   calculateYear,
   formatMinute,
+  parseTime,
   scenarioOffsets,
   seriesKey,
   summarizeSeries,
@@ -70,6 +73,15 @@ const EVENT_OPTIONS: Array<{ value: EventType; label: string; icon: typeof Sunri
 ];
 
 const TWILIGHT_EVENTS: EventType[] = ["dawn", "dusk"];
+
+/** Labels each chart on /compare, where two of them share one card. */
+function VariantHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-muted-foreground mb-3 text-[11px] font-semibold tracking-[0.12em] uppercase">
+      {children}
+    </div>
+  );
+}
 
 function downloadBlob(content: BlobPart, type: string, filename: string) {
   const href = URL.createObjectURL(new Blob([content], { type }));
@@ -168,6 +180,19 @@ function App() {
 
   const visibleSeries = activeSeries.filter(({ key }) => !settings.hiddenSeries.includes(key));
   const primary = settings.places[0];
+
+  // Which chart to draw. Read once — the variant only changes on navigation.
+  const [chartView] = useState(() => readChartView(window.location));
+  // The sun path shows one day. December 21 is where the scenarios differ most,
+  // so it is the honest default rather than January 1.
+  const [focusDay, setFocusDay] = useState<number | null>(null);
+  const solsticeDay = Math.max(0, points.findIndex((point) => point.isoDate.endsWith("-12-21")));
+  const focusIndex = Math.min(points.length - 1, focusDay ?? solsticeDay);
+  const focusPoint = points[focusIndex];
+  // Reuse the schedule the reader may already have set instead of inventing one.
+  const morningMarker = settings.markers.find((marker) => marker.kind === "morning");
+  const compareScenario =
+    settings.scenarios.find((scenario) => scenario !== "current") ?? "permanentDst";
   const primaryOffsets = scenarioOffsets(primary.timezone, settings.year);
   const twilightOn = TWILIGHT_EVENTS.every((event) => settings.events.includes(event));
 
@@ -457,7 +482,9 @@ function App() {
                     {settings.year} · local clock time
                   </div>
                   <h2 id="chart-heading" className="text-xl font-semibold tracking-tight sm:text-2xl">
-                    Sunrise &amp; sunset through the year
+                    {chartView.variant === "sunpath" && !chartView.compare
+                      ? "The sun's path through one day"
+                      : "Sunrise & sunset through the year"}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2" data-html2canvas-ignore="true">
@@ -487,56 +514,102 @@ function App() {
                 </div>
               </div>
 
-              {activeSeries.length ? (
-                <DaylightChart
-                  points={points}
-                  series={activeSeries}
-                  hiddenSeries={settings.hiddenSeries}
-                  places={settings.places}
-                  year={settings.year}
-                  markers={settings.markers}
-                  use24Hour={settings.use24Hour}
-                />
-              ) : (
-                <div className="text-muted-foreground flex h-[440px] flex-col items-center justify-center gap-2 sm:h-[500px]">
-                  <Sun className="text-sun size-7" aria-hidden="true" />
-                  <strong className="text-foreground text-sm font-semibold">No lines selected</strong>
-                  <span className="text-sm">Turn on a solar event and a clock policy above.</span>
+              {(chartView.compare || chartView.variant === "classic") &&
+                (activeSeries.length ? (
+                  <>
+                    {chartView.compare && <VariantHeading>Year chart</VariantHeading>}
+                    <DaylightChart
+                      points={points}
+                      series={activeSeries}
+                      hiddenSeries={settings.hiddenSeries}
+                      places={settings.places}
+                      year={settings.year}
+                      markers={settings.markers}
+                      use24Hour={settings.use24Hour}
+                    />
+                  </>
+                ) : (
+                  <div className="text-muted-foreground flex h-[440px] flex-col items-center justify-center gap-2 sm:h-[500px]">
+                    <Sun className="text-sun size-7" aria-hidden="true" />
+                    <strong className="text-foreground text-sm font-semibold">No lines selected</strong>
+                    <span className="text-sm">Turn on a solar event and a clock policy above.</span>
+                  </div>
+                ))}
+
+              {(chartView.compare || chartView.variant === "sunpath") && (
+                <div className={chartView.compare ? "mt-8" : undefined}>
+                  {chartView.compare && <VariantHeading>Sun path · one day</VariantHeading>}
+                  <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <label className="text-muted-foreground flex items-center gap-2.5 text-xs font-medium">
+                      Date
+                      <input
+                        type="range"
+                        min={0}
+                        max={points.length - 1}
+                        value={focusIndex}
+                        onChange={(event) => setFocusDay(Number(event.target.value))}
+                        className="accent-sun w-44 max-w-[45vw]"
+                        aria-label="Day of year"
+                      />
+                      <b className="text-foreground tabular font-medium">{focusPoint.dateLabel}</b>
+                    </label>
+                    {!morningMarker && (
+                      <span className="text-muted-foreground/70 text-xs">
+                        Add a morning time in “Add your schedule” to pin your alarm.
+                      </span>
+                    )}
+                  </div>
+                  <SunPathPanel
+                    place={primary}
+                    year={settings.year}
+                    isoDate={focusPoint.isoDate}
+                    dateLabel={focusPoint.dateLabel}
+                    compare={compareScenario}
+                    alarmMinute={morningMarker ? parseTime(morningMarker.time) : null}
+                    alarmLabel={morningMarker?.label ?? "Alarm"}
+                    use24Hour={settings.use24Hour}
+                  />
                 </div>
               )}
 
-              <div className="text-muted-foreground mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs">
-                {settings.places.map((place, index) => (
-                  <span key={place.id} className="flex items-center gap-2">
-                    <span
-                      className="size-2 rounded-full"
-                      style={{ background: palette.series[index] }}
-                      aria-hidden="true"
-                    />
-                    {place.city}, {place.state}
-                  </span>
-                ))}
-                <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden="true" />
-                {SCENARIO_OPTIONS.map(({ value, label }) => (
-                  <span key={value} className="flex items-center gap-2">
-                    <SeriesSwatch color="currentColor" scenario={value} />
-                    {label}
-                  </span>
-                ))}
-              </div>
+              {/* Colour-by-place and dash-by-scenario describe the year chart's
+                  lines, so they only belong on screen when that chart is drawn. */}
+              {(chartView.compare || chartView.variant === "classic") && (
+                <>
+                  <div className="text-muted-foreground mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs">
+                    {settings.places.map((place, index) => (
+                      <span key={place.id} className="flex items-center gap-2">
+                        <span
+                          className="size-2 rounded-full"
+                          style={{ background: palette.series[index] }}
+                          aria-hidden="true"
+                        />
+                        {place.city}, {place.state}
+                      </span>
+                    ))}
+                    <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden="true" />
+                    {SCENARIO_OPTIONS.map(({ value, label }) => (
+                      <span key={value} className="flex items-center gap-2">
+                        <SeriesSwatch color="currentColor" scenario={value} />
+                        {label}
+                      </span>
+                    ))}
+                  </div>
 
-              <SeriesControls
-                series={activeSeries}
-                hidden={settings.hiddenSeries}
-                onToggle={(key) =>
-                  setSettings((current) => ({
-                    ...current,
-                    hiddenSeries: current.hiddenSeries.includes(key)
-                      ? current.hiddenSeries.filter((item) => item !== key)
-                      : [...current.hiddenSeries, key],
-                  }))
-                }
-              />
+                  <SeriesControls
+                    series={activeSeries}
+                    hidden={settings.hiddenSeries}
+                    onToggle={(key) =>
+                      setSettings((current) => ({
+                        ...current,
+                        hiddenSeries: current.hiddenSeries.includes(key)
+                          ? current.hiddenSeries.filter((item) => item !== key)
+                          : [...current.hiddenSeries, key],
+                      }))
+                    }
+                  />
+                </>
+              )}
             </div>
 
             {/* Takeaways */}

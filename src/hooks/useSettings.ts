@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CHART_PARAM } from "../lib/chart-variant";
 import { defaultPlace, deserializePlace, serializePlace } from "../lib/locations";
 import type { AppSettings, EventType, Scenario, ScheduleMarker } from "../types";
 
@@ -61,6 +62,11 @@ function readUrl(base: AppSettings): AppSettings {
 
 function writeUrl(settings: AppSettings) {
   const params = new URLSearchParams();
+  // The chart variant is a view toggle rather than a setting, so it is not part
+  // of AppSettings — but it does live in the query string, and this rewrite
+  // replaces the whole string. Carry it over or it is lost on first render.
+  const chart = new URLSearchParams(window.location.search).get(CHART_PARAM);
+  if (chart) params.set(CHART_PARAM, chart);
   settings.places.forEach((place) => params.append("place", serializePlace(place)));
   params.set("year", String(settings.year));
   params.set("events", settings.events.join(","));
