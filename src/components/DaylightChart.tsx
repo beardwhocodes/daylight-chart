@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { useMemo } from "react";
 import {
   CartesianGrid,
+  Label,
   Line,
   LineChart,
   ReferenceLine,
@@ -33,6 +34,37 @@ interface TooltipEntry {
 }
 
 const MONTH_TICKS = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335];
+
+/**
+ * Where a schedule label can sit without landing on a line. Each day is scored
+ * by how far the nearest visible series runs from the marker, and the roomiest
+ * day wins. A fixed position cannot work: the lines move with the city, the
+ * season and the scenario, so the clear space moves with them. The ends are
+ * skipped because a label there collides with the axis or leaves the plot.
+ */
+export function clearestFraction(
+  points: DaylightPoint[],
+  series: SeriesDefinition[],
+  markerMinute: number,
+): number {
+  if (points.length < 2) return 0.5;
+  const first = Math.floor(points.length * 0.12);
+  const last = Math.ceil(points.length * 0.88);
+  let bestIndex = Math.floor(points.length / 2);
+  let bestGap = -1;
+  for (let index = first; index < last; index += 2) {
+    let gap = Number.POSITIVE_INFINITY;
+    for (const definition of series) {
+      const value = points[index][definition.key];
+      if (typeof value === "number") gap = Math.min(gap, Math.abs(value - markerMinute));
+    }
+    if (gap > bestGap) {
+      bestGap = gap;
+      bestIndex = index;
+    }
+  }
+  return bestIndex / (points.length - 1);
+}
 
 function nthWeekday(year: number, month: number, weekday: number, occurrence: number) {
   const start = DateTime.local(year, month, 1);
@@ -173,20 +205,36 @@ export function DaylightChart({ points, series, hiddenSeries, places, year, mark
               </>
             )}
 
-            {markers.map((marker) => (
-              <ReferenceLine
-                key={marker.id}
-                y={parseTime(marker.time)}
-                stroke={palette.marker}
-                strokeDasharray="3 5"
-                label={{
-                  value: marker.label,
-                  position: "insideBottomRight",
-                  fill: palette.marker,
-                  fontSize: 11,
-                }}
-              />
-            ))}
+            {markers.map((marker) => {
+              const minute = parseTime(marker.time);
+              const fraction = clearestFraction(points, visibleSeries, minute);
+              return (
+                <ReferenceLine key={marker.id} y={minute} stroke={palette.marker} strokeDasharray="3 5">
+                  <Label
+                    content={({ viewBox }) => {
+                      const box = viewBox as { x: number; y: number; width: number };
+                      return (
+                        <text
+                          x={box.x + box.width * fraction}
+                          y={box.y - 7}
+                          textAnchor="middle"
+                          fill={palette.marker}
+                          fontSize={11}
+                          // Cased so the label stays readable over a gridline or
+                          // a line that still passes close by.
+                          stroke={palette.exportBackground}
+                          strokeWidth={3}
+                          strokeOpacity={0.8}
+                          paintOrder="stroke"
+                        >
+                          {marker.label}
+                        </text>
+                      );
+                    }}
+                  />
+                </ReferenceLine>
+              );
+            })}
 
             {visibleSeries.map((definition) => {
               const isTwilight = definition.event === "dawn" || definition.event === "dusk";
