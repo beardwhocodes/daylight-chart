@@ -1,4 +1,4 @@
-# Daylight Chart
+# What If DST?
 
 An interactive, neutral explainer for comparing sunrise and sunset under current US clock rules, the hypothetical full-year effect of the Sunshine Protection Act of 2025, and permanent standard time.
 
@@ -38,9 +38,9 @@ npm test
 npm run build
 ```
 
-## Cloudflare Pages
+## Cloudflare Workers
 
-The application is entirely static. It needs no Worker function, database, environment variable, or API key.
+The application is entirely static and deploys through Cloudflare Workers Static Assets. It needs no server function, database, environment variable, or runtime API key.
 
 - Build command: `npm run build`
 - Output directory: `dist`
@@ -52,7 +52,7 @@ For direct upload after authenticating Wrangler:
 npm run deploy
 ```
 
-Cloudflare Web Analytics can be enabled from the Pages project’s Metrics panel; no analytics snippet is included in the source.
+Cloudflare Web Analytics can be enabled from the Cloudflare dashboard; no analytics snippet is included in the source.
 
 ## Location data
 

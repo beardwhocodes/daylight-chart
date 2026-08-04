@@ -1,7 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "daylight-chart",
+  "name": "whatifdst",
   "compatibility_date": "2026-08-04",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "whatifdst.com", "custom_domain": true },
+    { "pattern": "www.whatifdst.com", "custom_domain": true }
+  ],
   // Static-assets-only Worker: no "main" script, the assets runtime serves dist
   // directly. public/_headers still applies.
   "assets": {
