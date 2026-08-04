@@ -105,9 +105,12 @@ export function DaylightChart({ points, series, hiddenSeries, places, year, mark
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
                 const day = points[Number(label) - 1];
+                // Latest time first. The y axis puts the smallest value at the
+                // bottom, so sunset sits above sunrise on screen and the rows
+                // should be read in the same order as the lines they name.
                 const entries = (payload as unknown as readonly TooltipEntry[])
                   .filter((entry) => entry.dataKey && typeof entry.value === "number")
-                  .sort((a, b) => (a.value ?? 0) - (b.value ?? 0));
+                  .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
                 return (
                   <div className="bg-popover/95 min-w-56 max-w-96 rounded-lg border p-3 shadow-xl shadow-black/15 backdrop-blur-md dark:shadow-black/50">
                     <div className="mb-2 text-[13px] font-semibold">

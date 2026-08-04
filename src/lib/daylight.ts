@@ -44,6 +44,15 @@ export function minuteForScenario(date: Date, timezone: string, year: number, sc
   return ((minute % 1440) + 1440) % 1440;
 }
 
+/**
+ * Places whose clocks never move, so permanent daylight time would change
+ * nothing for them. Both scenario lines then land on top of each other, which
+ * reads as a missing line unless the page says why.
+ */
+export function exemptPlaces(places: Place[], year: number): Place[] {
+  return places.filter((place) => !scenarioOffsets(place.timezone, year).observesDst);
+}
+
 export function seriesKey(placeId: string, event: EventType, scenario: Scenario) {
   return `${placeId}|${event}|${scenario}`;
 }

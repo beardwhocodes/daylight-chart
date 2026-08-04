@@ -52,6 +52,7 @@ import { CHART_PARAM, readChartView, type ChartVariant } from "@/lib/chart-varia
 import {
   buildSeries,
   calculateYear,
+  exemptPlaces,
   formatMinute,
   parseTime,
   seriesKey,
@@ -184,6 +185,10 @@ function App() {
 
   const visibleSeries = activeSeries.filter(({ key }) => !settings.hiddenSeries.includes(key));
   const primary = settings.places[0];
+  const exempt = exemptPlaces(settings.places, settings.year);
+  const exemptNames = new Intl.ListFormat("en", { style: "long", type: "conjunction" }).format(
+    exempt.map((place) => `${place.city}, ${place.state}`),
+  );
 
   // Which chart to draw. Seeded from the URL so a shared link opens on the same
   // view; the toggle writes it back so choosing a view keeps the link shareable.
@@ -599,6 +604,20 @@ function App() {
                 </div>
               )}
 
+              {/* Without this the two scenario lines sit exactly on top of each
+                  other and the stat cards report "proposed" times identical to
+                  today's, with nothing saying why. */}
+              {exempt.length > 0 && (
+                <p className="text-muted-foreground mt-4 flex items-start gap-2 text-xs">
+                  <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                  <span>
+                    <strong className="text-foreground font-medium">{exemptNames}</strong>{" "}
+                    {exempt.length === 1 ? "does" : "do"} not change clocks, so permanent daylight
+                    time would leave {exempt.length === 1 ? "these" : "those"} times unchanged.
+                  </span>
+                </p>
+              )}
+
               {/* Colour-by-place and dash-by-scenario describe the year chart's
                   lines, so they only belong on screen when that chart is drawn. */}
               {(chartView.compare || chartView.variant === "classic") && (
@@ -608,14 +627,8 @@ function App() {
                   <div className="text-muted-foreground mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t py-4 text-xs">
                     {/* Hue means the event, so the first key on the row says so.
                         Shade within the hue is what separates places. */}
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="h-0.5 w-5 rounded-full"
-                        style={{ background: palette.event.warm[0] }}
-                        aria-hidden="true"
-                      />
-                      Sunrise
-                    </span>
+                    {/* Sunset first, matching both the tooltip and the lines:
+                        sunset runs above sunrise on the chart. */}
                     <span className="flex items-center gap-2">
                       <span
                         className="h-0.5 w-5 rounded-full"
@@ -623,6 +636,14 @@ function App() {
                         aria-hidden="true"
                       />
                       Sunset
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-0.5 w-5 rounded-full"
+                        style={{ background: palette.event.warm[0] }}
+                        aria-hidden="true"
+                      />
+                      Sunrise
                     </span>
                     {/* One location is already named in the picker above, so the
                         key only appears once there are places to tell apart. */}
