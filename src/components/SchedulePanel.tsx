@@ -4,14 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { FieldLabel } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { EVENT_LABELS, formatMinute, parseTime, seriesKey } from "@/lib/daylight";
+import { EVENT_LABELS, formatMinute, parseTime, scheduleKindForTime, seriesKey } from "@/lib/daylight";
 import type { DaylightPoint, Place, ScheduleMarker } from "@/types";
 
 interface Props {
@@ -55,7 +48,13 @@ export function SchedulePanel({ markers, points, primaryPlace, use24Hour, onChan
   };
 
   const update = (id: string, patch: Partial<ScheduleMarker>) =>
-    onChange(markers.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+    onChange(
+      markers.map((item) => {
+        if (item.id !== id) return item;
+        const next = { ...item, ...patch };
+        return patch.time ? { ...next, kind: scheduleKindForTime(patch.time) } : next;
+      }),
+    );
 
   return (
     <Collapsible className="bg-card group/panel min-w-0 rounded-xl border shadow-sm">
@@ -90,11 +89,10 @@ export function SchedulePanel({ markers, points, primaryPlace, use24Hour, onChan
             const permanent = countDarkDays(points, primaryPlace, marker, "permanentDst");
             const labelId = `marker-label-${marker.id}`;
             const timeId = `marker-time-${marker.id}`;
-            const kindId = `marker-kind-${marker.id}`;
 
             return (
               <div key={marker.id} className="bg-muted/40 space-y-3 rounded-lg border p-3">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,18rem)_8.5rem_10rem_auto] sm:justify-start">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,18rem)_8.5rem_auto] sm:justify-start">
                   <div className="flex flex-col gap-1.5">
                     <FieldLabel asChild>
                       <label htmlFor={labelId}>Label</label>
@@ -120,26 +118,6 @@ export function SchedulePanel({ markers, points, primaryPlace, use24Hour, onChan
                       className="tabular"
                       onChange={(event) => update(marker.id, { time: event.target.value })}
                     />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <FieldLabel asChild>
-                      <label htmlFor={kindId}>Test against</label>
-                    </FieldLabel>
-                    <Select
-                      value={marker.kind}
-                      onValueChange={(value) =>
-                        update(marker.id, { kind: value as ScheduleMarker["kind"] })
-                      }
-                    >
-                      <SelectTrigger id={kindId} aria-label={`${marker.label} event`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="morning">Sunrise</SelectItem>
-                        <SelectItem value="evening">Sunset</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   <div className="flex flex-col justify-end">

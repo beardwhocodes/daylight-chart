@@ -55,7 +55,6 @@ import {
   calculateYear,
   exemptPlaces,
   formatMinute,
-  parseTime,
   seriesKey,
   summarizeSeries,
 } from "@/lib/daylight";
@@ -225,8 +224,6 @@ function App() {
   const solsticeDay = Math.max(0, points.findIndex((point) => point.isoDate.endsWith("-12-21")));
   const focusIndex = Math.min(points.length - 1, focusDay ?? solsticeDay);
   const focusPoint = points[focusIndex];
-  // Reuse the schedule the reader may already have set instead of inventing one.
-  const morningMarker = settings.markers.find((marker) => marker.kind === "morning");
   const compareScenario =
     settings.scenarios.find((scenario) => scenario !== "current") ?? "permanentDst";
   const twilightOn = TWILIGHT_EVENTS.every((event) => settings.events.includes(event));
@@ -608,9 +605,9 @@ function App() {
                       />
                       <b className="text-foreground tabular font-medium">{focusPoint.dateLabel}</b>
                     </label>
-                    {!morningMarker && (
+                    {settings.markers.length === 0 && (
                       <span className="text-muted-foreground/70 text-xs">
-                        Add a morning time in “Add your schedule” to pin your alarm.
+                        Add a time in “Add your schedule” to pin it here.
                       </span>
                     )}
                   </div>
@@ -620,8 +617,7 @@ function App() {
                     isoDate={focusPoint.isoDate}
                     dateLabel={focusPoint.dateLabel}
                     compare={compareScenario}
-                    alarmMinute={morningMarker ? parseTime(morningMarker.time) : null}
-                    alarmLabel={morningMarker?.label ?? "Alarm"}
+                    markers={settings.markers}
                     use24Hour={settings.use24Hour}
                   />
                 </div>

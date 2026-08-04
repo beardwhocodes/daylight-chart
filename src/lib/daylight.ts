@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import SunCalc from "suncalc";
-import type { DaylightPoint, EventType, Place, Scenario, SeriesDefinition } from "../types";
+import type { DaylightPoint, EventType, Place, Scenario, ScheduleMarker, SeriesDefinition } from "../types";
 
 export const EVENT_LABELS: Record<EventType, string> = {
   sunrise: "Sunrise",
@@ -107,6 +107,17 @@ export function formatMinute(value: number | null | undefined, use24Hour = false
   if (use24Hour) return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
   const displayHour = hour % 12 || 12;
   return `${displayHour}:${minute.toString().padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
+}
+
+/**
+ * Which solar event a schedule time is measured against. A time before midday
+ * belongs to the morning and is compared with sunrise; anything later belongs
+ * to the evening and is compared with sunset. This used to be a control the
+ * reader had to set, but it is the only sensible answer for any real schedule,
+ * a night shift included, so it is derived from the time instead.
+ */
+export function scheduleKindForTime(time: string): ScheduleMarker["kind"] {
+  return parseTime(time) < 12 * 60 ? "morning" : "evening";
 }
 
 export function parseTime(value: string): number {
