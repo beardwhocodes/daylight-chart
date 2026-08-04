@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" class="dark" style="color-scheme: dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#141419" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta
+      name="description"
+      content="Compare a year of sunrise and sunset times under current US law, permanent daylight saving time, and permanent standard time."
+    />
+    <title>Daylight Chart — See permanent DST in your city</title>
+    <script>
+      // Applied before first paint so the page never flashes the wrong theme.
+      (function () {
+        try {
+          var stored = localStorage.getItem("daylight-chart-theme") || "dark";
+          var dark =
+            stored === "dark" ||
+            (stored === "system" && !window.matchMedia("(prefers-color-scheme: light)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        } catch (error) {
+          /* Storage can be blocked; the dark default in the markup still applies. */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+.wrangler
+coverage
+*.local
+
+# Emitted by `tsc -b`
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts

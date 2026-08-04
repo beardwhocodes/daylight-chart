@@ -1,0 +1,233 @@
+/* Self-hosted so the page makes no third-party request. */
+@import "@fontsource-variable/inter";
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Palette is authored in OKLCH so the light and dark ramps stay perceptually
+  matched. Hue 265 gives the neutrals a faint cool cast, which keeps the amber
+  sun accent from reading muddy against them.
+*/
+:root {
+  --radius: 0.75rem;
+
+  --background: oklch(0.995 0.002 265);
+  --foreground: oklch(0.21 0.012 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.012 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.012 265);
+  --primary: oklch(0.24 0.012 265);
+  --primary-foreground: oklch(0.985 0.002 265);
+  --secondary: oklch(0.965 0.004 265);
+  --secondary-foreground: oklch(0.24 0.012 265);
+  --muted: oklch(0.965 0.004 265);
+  --muted-foreground: oklch(0.53 0.014 265);
+  --accent: oklch(0.965 0.004 265);
+  --accent-foreground: oklch(0.24 0.012 265);
+  --destructive: oklch(0.58 0.21 27);
+  --destructive-foreground: oklch(0.985 0.002 265);
+  --border: oklch(0.905 0.006 265);
+  --input: oklch(0.905 0.006 265);
+  --ring: oklch(0.65 0.15 62);
+
+  --sun: oklch(0.68 0.16 62);
+  --sun-foreground: oklch(0.99 0.005 62);
+  --grid: oklch(0.21 0.012 265 / 9%);
+
+  /*
+    The evidence section is an always-dark band in both themes. It sits below
+    the dark-mode page background so the band still reads as a separate surface
+    when the rest of the page is already dark.
+  */
+  --band: oklch(0.125 0.008 265);
+  --band-card: oklch(0.165 0.009 265);
+}
+
+.dark {
+  --background: oklch(0.16 0.009 265);
+  --foreground: oklch(0.97 0.003 265);
+  --card: oklch(0.205 0.01 265);
+  --card-foreground: oklch(0.97 0.003 265);
+  --popover: oklch(0.225 0.011 265);
+  --popover-foreground: oklch(0.97 0.003 265);
+  --primary: oklch(0.97 0.003 265);
+  --primary-foreground: oklch(0.19 0.01 265);
+  --secondary: oklch(0.265 0.012 265);
+  --secondary-foreground: oklch(0.97 0.003 265);
+  --muted: oklch(0.255 0.012 265);
+  --muted-foreground: oklch(0.7 0.015 265);
+  --accent: oklch(0.29 0.014 265);
+  --accent-foreground: oklch(0.97 0.003 265);
+  --destructive: oklch(0.65 0.19 25);
+  --destructive-foreground: oklch(0.985 0.002 265);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.78 0.14 68);
+
+  --sun: oklch(0.82 0.15 72);
+  --sun-foreground: oklch(0.2 0.02 72);
+  --grid: oklch(1 0 0 / 7%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sun: var(--sun);
+  --color-sun-foreground: var(--sun-foreground);
+  --color-grid: var(--grid);
+  --color-band: var(--band);
+  --color-band-card: var(--band-card);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+
+  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --animate-collapsible-down: collapsible-down 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-collapsible-up: collapsible-up 180ms cubic-bezier(0.32, 0.72, 0, 1);
+
+  @keyframes collapsible-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-collapsible-content-height);
+    }
+  }
+  @keyframes collapsible-up {
+    from {
+      height: var(--radix-collapsible-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Optical sizing: headlines read tighter than the metric default. */
+  h1, h2, h3, h4 {
+    @apply tracking-tight text-balance;
+  }
+
+  p, li {
+    @apply text-pretty;
+  }
+
+  ::selection {
+    @apply bg-sun/25;
+  }
+
+  /* One ring style everywhere so keyboard focus is unmistakable. */
+  :focus-visible {
+    @apply outline-ring/70 outline-2 outline-offset-2;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+    background-clip: padding-box;
+    border: 3px solid transparent;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Hairline top highlight — the detail that makes a flat card look lit. */
+  .lit {
+    box-shadow:
+      inset 0 1px 0 0 var(--color-white, #fff),
+      0 1px 2px 0 oklch(0.21 0.012 265 / 5%);
+  }
+  .dark .lit {
+    box-shadow:
+      inset 0 1px 0 0 oklch(1 0 0 / 6%),
+      0 1px 2px 0 oklch(0 0 0 / 30%);
+  }
+
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image: radial-gradient(var(--color-border) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Recharts injects its own focus outlines on the SVG surface. */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
