@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Download,
   FileDown,
+  Github,
   Image as ImageIcon,
   Info,
   Link2,
@@ -78,6 +79,18 @@ const CHART_VIEW_OPTIONS: Array<{ value: ChartVariant; label: string; icon: type
   { value: "classic", label: "Year", icon: CalendarDays },
   { value: "sunpath", label: "One day", icon: Sunrise },
 ];
+
+const REPO_URL = "https://github.com/beardwhocodes/daylight-chart";
+const X_URL = "https://x.com/beardwhocodes";
+
+/** Lucide has no current X mark, so this is the same path github-scanner uses. */
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 /** Labels each chart on /compare, where two of them share one card. */
 function VariantHeading({ children }: { children: React.ReactNode }) {
@@ -323,6 +336,16 @@ function App() {
                   Methodology
                 </a>
               </nav>
+              <a
+                href={REPO_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                aria-label="Source on GitHub"
+                title="Source on GitHub"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent inline-flex size-9 items-center justify-center rounded-md transition-colors"
+              >
+                <Github className="size-[18px]" aria-hidden="true" />
+              </a>
               <ThemeToggle />
             </div>
           </div>
@@ -929,9 +952,43 @@ function App() {
             <p className="max-w-md sm:text-center">
               Built for informational purposes. Times are estimates, not legal or navigational advice.
             </p>
-            <a href="#top" className="hover:text-foreground transition-colors">
-              Back to top ↑
-            </a>
+            <div className="flex items-center gap-4">
+              <span>
+                Built by{" "}
+                <a
+                  href="https://beardwho.codes"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="hover:text-foreground transition-colors"
+                >
+                  beardwho.codes
+                </a>
+              </span>
+              <a
+                href={X_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                aria-label="@beardwhocodes on X"
+                title="@beardwhocodes on X"
+                className="hover:text-foreground transition-colors"
+              >
+                <XIcon className="size-[15px]" />
+              </a>
+              <a
+                href={REPO_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                aria-label="Source on GitHub"
+                title="Source on GitHub"
+                className="hover:text-foreground transition-colors"
+              >
+                <Github className="size-4" aria-hidden="true" />
+              </a>
+              <span className="bg-border h-3 w-px" aria-hidden="true" />
+              <a href="#top" className="hover:text-foreground transition-colors">
+                Back to top ↑
+              </a>
+            </div>
           </div>
         </footer>
 
