@@ -119,13 +119,13 @@ function SectionHeading({
         <span
           className={
             invert
-              ? "tabular text-[11px] font-semibold tracking-[0.16em] text-white/40"
+              ? "tabular text-band-muted text-[11px] font-semibold tracking-[0.16em]"
               : "tabular text-muted-foreground/60 text-[11px] font-semibold tracking-[0.16em]"
           }
         >
           {index}
         </span>
-        <span className={invert ? "h-px w-8 bg-white/20" : "bg-border h-px w-8"} />
+        <span className={invert ? "bg-band-border h-px w-8" : "bg-border h-px w-8"} />
         <span className="text-sun text-[11px] font-semibold tracking-[0.12em] uppercase">
           {eyebrow}
         </span>
@@ -776,7 +776,7 @@ function App() {
           </section>
 
           {/* Evidence */}
-          <section className="bg-band border-y border-white/10 text-white">
+          <section className="bg-band border-band-border text-band-foreground border-y">
             <div className="mx-auto w-full max-w-[1200px] px-4 py-20 sm:px-6 sm:py-28">
               <SectionHeading
                 index="02"
@@ -785,7 +785,7 @@ function App() {
                 invert
               />
 
-              <div className="grid gap-px overflow-hidden rounded-xl bg-white/10 sm:grid-cols-2">
+              <div className="bg-band-border grid gap-px overflow-hidden rounded-xl sm:grid-cols-2">
                 {[
                   {
                     title: "Morning and evening",
@@ -812,10 +812,10 @@ function App() {
                 ].map((item) => (
                   <article
                     key={item.title}
-                    className="bg-band-card flex flex-col gap-3 p-7 transition-colors hover:bg-white/6 sm:p-9"
+                    className="bg-band-card hover:bg-foreground/5 flex flex-col gap-3 p-7 transition-colors sm:p-9"
                   >
                     <h3 className="text-xl font-semibold tracking-tight">{item.title}</h3>
-                    <p className="text-sm text-white/60">{item.body}</p>
+                    <p className="text-band-muted text-sm">{item.body}</p>
                     {item.href && (
                       <a
                         href={item.href}
@@ -831,10 +831,10 @@ function App() {
                 ))}
               </div>
 
-              <aside className="mt-6 flex gap-3.5 rounded-xl border border-white/10 bg-white/[0.03] p-5">
+              <aside className="border-band-border bg-foreground/[0.03] mt-6 flex gap-3.5 rounded-xl border p-5">
                 <Info className="text-sun mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <p className="text-sm text-white/60">
-                  <strong className="font-semibold text-white">
+                <p className="text-band-muted text-sm">
+                  <strong className="text-band-foreground font-semibold">
                     This site does not take a position.
                   </strong>{" "}
                   The chart calculates clock-time consequences. Research summaries describe the stated

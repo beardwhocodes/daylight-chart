@@ -38,12 +38,17 @@
   --grid: oklch(0.21 0.012 265 / 9%);
 
   /*
-    The evidence section is an always-dark band in both themes. It sits below
-    the dark-mode page background so the band still reads as a separate surface
-    when the rest of the page is already dark.
+    The evidence section is a band: a surface set apart from the page, with its
+    own cards sitting on top of it. In light mode the band is the darker of the
+    two and the cards go white; in dark mode that order flips, so the band drops
+    below the page background and the cards lift above it. Its own foreground
+    tokens exist because the text sits on the band, not on the page.
   */
-  --band: oklch(0.125 0.008 265);
-  --band-card: oklch(0.165 0.009 265);
+  --band: oklch(0.955 0.005 265);
+  --band-card: oklch(1 0 0);
+  --band-foreground: oklch(0.21 0.012 265);
+  --band-muted: oklch(0.5 0.014 265);
+  --band-border: oklch(0.9 0.006 265);
 }
 
 .dark {
@@ -70,6 +75,12 @@
   --sun: oklch(0.82 0.15 72);
   --sun-foreground: oklch(0.2 0.02 72);
   --grid: oklch(1 0 0 / 7%);
+
+  --band: oklch(0.125 0.008 265);
+  --band-card: oklch(0.165 0.009 265);
+  --band-foreground: oklch(0.97 0.003 265);
+  --band-muted: oklch(0.72 0.012 265);
+  --band-border: oklch(1 0 0 / 10%);
 }
 
 @theme inline {
@@ -97,6 +108,9 @@
   --color-grid: var(--grid);
   --color-band: var(--band);
   --color-band-card: var(--band-card);
+  --color-band-foreground: var(--band-foreground);
+  --color-band-muted: var(--band-muted);
+  --color-band-border: var(--band-border);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
