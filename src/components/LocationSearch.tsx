@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/command";
 import { FieldLabel } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { chartPalette } from "@/lib/chart-theme";
+import { chartPalette, placeSwatch } from "@/lib/chart-theme";
 import { nearestPlace, placeLabel, searchLocations } from "@/lib/locations";
 import { useTheme } from "@/hooks/useTheme";
 import type { LocationResult } from "@/lib/locations";
@@ -28,7 +28,7 @@ const MAX_PLACES = 4;
 
 export function LocationSearch({ places, onAdd, onRemove }: Props) {
   const { theme } = useTheme();
-  const colors = chartPalette(theme).series;
+  const palette = chartPalette(theme);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -103,7 +103,7 @@ export function LocationSearch({ places, onAdd, onRemove }: Props) {
           >
             <span
               className="size-2 shrink-0 rounded-full"
-              style={{ background: colors[index] }}
+              style={{ background: placeSwatch(palette, index) }}
               aria-hidden="true"
             />
             <span className="truncate">{placeLabel(place)}</span>

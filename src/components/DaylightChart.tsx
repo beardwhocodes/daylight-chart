@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { SeriesSwatch } from "@/components/SeriesControls";
-import { chartPalette } from "@/lib/chart-theme";
+import { chartPalette, seriesColor } from "@/lib/chart-theme";
 import { formatMinute, parseTime, scenarioOffsets, SCENARIO_LABELS } from "@/lib/daylight";
 import { useTheme } from "@/hooks/useTheme";
 import type { DaylightPoint, Place, ScheduleMarker, SeriesDefinition } from "@/types";
@@ -126,7 +126,7 @@ export function DaylightChart({ points, series, hiddenSeries, places, year, mark
                             className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-2.5 text-xs"
                           >
                             <SeriesSwatch
-                              color={entry.color ?? palette.series[definition.placeIndex]}
+                              color={entry.color ?? seriesColor(palette, definition.event, definition.placeIndex)}
                               scenario={definition.scenario}
                               className="w-6"
                             />
@@ -193,7 +193,7 @@ export function DaylightChart({ points, series, hiddenSeries, places, year, mark
                   dataKey={definition.key}
                   name={definition.label}
                   type="monotone"
-                  stroke={palette.series[definition.placeIndex]}
+                  stroke={seriesColor(palette, definition.event, definition.placeIndex)}
                   strokeWidth={isTwilight ? 1.25 : 2}
                   strokeOpacity={isTwilight ? 0.5 : 1}
                   strokeLinecap="round"

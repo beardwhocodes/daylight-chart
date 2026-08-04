@@ -49,6 +49,9 @@ export function seriesKey(placeId: string, event: EventType, scenario: Scenario)
 }
 
 export function buildSeries(places: Place[], events: EventType[], scenarios: Scenario[]): SeriesDefinition[] {
+  // The city only earns a place in the label when there is more than one to tell
+  // apart. With a single location it repeats the heading on every line.
+  const nameThePlace = places.length > 1;
   return places.flatMap((place, placeIndex) =>
     events.flatMap((event) =>
       scenarios.map((scenario) => ({
@@ -57,7 +60,7 @@ export function buildSeries(places: Place[], events: EventType[], scenarios: Sce
         placeIndex,
         event,
         scenario,
-        label: `${place.city} ${EVENT_LABELS[event]} — ${SCENARIO_LABELS[scenario]}`,
+        label: `${nameThePlace ? `${place.city} ` : ""}${EVENT_LABELS[event]} — ${SCENARIO_LABELS[scenario]}`,
       })),
     ),
   );

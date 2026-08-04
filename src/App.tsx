@@ -47,8 +47,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSettings, yearOptions } from "@/hooks/useSettings";
 import { useTheme } from "@/hooks/useTheme";
-import { chartPalette } from "@/lib/chart-theme";
-import { readChartView } from "@/lib/chart-variant";
+import { chartPalette, placeSwatch } from "@/lib/chart-theme";
+import { CHART_PARAM, readChartView, type ChartVariant } from "@/lib/chart-variant";
 import {
   buildSeries,
   calculateYear,
@@ -73,6 +73,11 @@ const EVENT_OPTIONS: Array<{ value: EventType; label: string; icon: typeof Sunri
 ];
 
 const TWILIGHT_EVENTS: EventType[] = ["dawn", "dusk"];
+
+const CHART_VIEW_OPTIONS: Array<{ value: ChartVariant; label: string; icon: typeof CalendarDays }> = [
+  { value: "classic", label: "Year", icon: CalendarDays },
+  { value: "sunpath", label: "One day", icon: Sunrise },
+];
 
 /** Labels each chart on /compare, where two of them share one card. */
 function VariantHeading({ children }: { children: React.ReactNode }) {
@@ -181,8 +186,22 @@ function App() {
   const visibleSeries = activeSeries.filter(({ key }) => !settings.hiddenSeries.includes(key));
   const primary = settings.places[0];
 
-  // Which chart to draw. Read once — the variant only changes on navigation.
-  const [chartView] = useState(() => readChartView(window.location));
+  // Which chart to draw. Seeded from the URL so a shared link opens on the same
+  // view; the toggle writes it back so choosing a view keeps the link shareable.
+  const [chartView, setChartView] = useState(() => readChartView(window.location));
+  const chooseVariant = (variant: ChartVariant) => {
+    setChartView((current) => ({ ...current, variant }));
+    const params = new URLSearchParams(window.location.search);
+    if (variant === "classic") params.delete(CHART_PARAM);
+    else params.set(CHART_PARAM, variant);
+    // Written straight to the URL because writeUrl in useSettings rebuilds the
+    // whole query string from window.location and would otherwise overwrite it.
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}?${params.toString()}${window.location.hash}`,
+    );
+  };
   // The sun path shows one day. December 21 is where the scenarios differ most,
   // so it is the honest default rather than January 1.
   const [focusDay, setFocusDay] = useState<number | null>(null);
@@ -487,7 +506,23 @@ function App() {
                       : "Sunrise & sunset through the year"}
                   </h2>
                 </div>
-                <div className="flex items-center gap-2" data-html2canvas-ignore="true">
+                <div className="flex flex-wrap items-center gap-2" data-html2canvas-ignore="true">
+                  {!chartView.compare && (
+                    <ToggleGroup
+                      type="single"
+                      value={chartView.variant}
+                      onValueChange={(value) => value && chooseVariant(value as ChartVariant)}
+                      aria-label="Chart view"
+                      className="mr-1"
+                    >
+                      {CHART_VIEW_OPTIONS.map(({ value, label, icon: Icon }) => (
+                        <ToggleGroupItem key={value} value={value} className="px-3">
+                          <Icon aria-hidden="true" />
+                          {label}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  )}
                   <Button variant="outline" size="sm" onClick={copyLink}>
                     <Link2 aria-hidden="true" />
                     Copy link
@@ -577,16 +612,41 @@ function App() {
               {(chartView.compare || chartView.variant === "classic") && (
                 <>
                   <div className="text-muted-foreground mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs">
-                    {settings.places.map((place, index) => (
-                      <span key={place.id} className="flex items-center gap-2">
-                        <span
-                          className="size-2 rounded-full"
-                          style={{ background: palette.series[index] }}
-                          aria-hidden="true"
-                        />
-                        {place.city}, {place.state}
-                      </span>
-                    ))}
+                    {/* Hue means the event, so the first key on the row says so.
+                        Shade within the hue is what separates places. */}
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-0.5 w-5 rounded-full"
+                        style={{ background: palette.event.warm[0] }}
+                        aria-hidden="true"
+                      />
+                      Sunrise
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-0.5 w-5 rounded-full"
+                        style={{ background: palette.event.cool[0] }}
+                        aria-hidden="true"
+                      />
+                      Sunset
+                    </span>
+                    {/* One location is already named in the picker above, so the
+                        key only appears once there are places to tell apart. */}
+                    {settings.places.length > 1 && (
+                      <>
+                        <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden="true" />
+                        {settings.places.map((place, index) => (
+                          <span key={place.id} className="flex items-center gap-2">
+                            <span
+                              className="size-2 rounded-full"
+                              style={{ background: placeSwatch(palette, index) }}
+                              aria-hidden="true"
+                            />
+                            {place.city}, {place.state}
+                          </span>
+                        ))}
+                      </>
+                    )}
                     <span className="bg-border mx-1 hidden h-4 w-px sm:block" aria-hidden="true" />
                     {SCENARIO_OPTIONS.map(({ value, label }) => (
                       <span key={value} className="flex items-center gap-2">

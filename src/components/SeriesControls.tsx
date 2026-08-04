@@ -1,7 +1,7 @@
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { chartPalette } from "@/lib/chart-theme";
+import { chartPalette, seriesColor } from "@/lib/chart-theme";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 import type { Scenario, SeriesDefinition } from "@/types";
@@ -40,7 +40,7 @@ interface Props {
 
 export function SeriesControls({ series, hidden, onToggle }: Props) {
   const { theme } = useTheme();
-  const colors = chartPalette(theme).series;
+  const palette = chartPalette(theme);
   const shownCount = series.filter((definition) => !hidden.includes(definition.key)).length;
 
   return (
@@ -72,7 +72,7 @@ export function SeriesControls({ series, hidden, onToggle }: Props) {
                   aria-label={`Show ${definition.label}`}
                 />
                 <SeriesSwatch
-                  color={colors[definition.placeIndex]}
+                  color={seriesColor(palette, definition.event, definition.placeIndex)}
                   scenario={definition.scenario}
                   className={cn(!checked && "opacity-30")}
                 />
