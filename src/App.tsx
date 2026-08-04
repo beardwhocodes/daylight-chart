@@ -54,7 +54,6 @@ import {
   calculateYear,
   formatMinute,
   parseTime,
-  scenarioOffsets,
   seriesKey,
   summarizeSeries,
 } from "@/lib/daylight";
@@ -212,7 +211,6 @@ function App() {
   const morningMarker = settings.markers.find((marker) => marker.kind === "morning");
   const compareScenario =
     settings.scenarios.find((scenario) => scenario !== "current") ?? "permanentDst";
-  const primaryOffsets = scenarioOffsets(primary.timezone, settings.year);
   const twilightOn = TWILIGHT_EVENTS.every((event) => settings.events.includes(event));
 
   const latestProposedSunrise = summarizeSeries(
@@ -225,12 +223,6 @@ function App() {
     seriesKey(primary.id, "sunset", "permanentDst"),
     "min",
   );
-  const changedDays = points.filter((point) => {
-    const current = point[seriesKey(primary.id, "sunrise", "current")];
-    const proposed = point[seriesKey(primary.id, "sunrise", "permanentDst")];
-    return typeof current === "number" && typeof proposed === "number" && Math.abs(proposed - current) > 30;
-  }).length;
-
   const setEvents = (events: EventType[]) =>
     setSettings((current) => ({ ...current, events }));
   const toggleTwilight = (pressed: boolean) =>
@@ -676,7 +668,7 @@ function App() {
 
             {/* Takeaways */}
             <div
-              className="mt-4 grid gap-3 sm:grid-cols-3"
+              className="mt-4 grid gap-3 sm:grid-cols-2"
               aria-label={`Key takeaways for ${placeLabel(primary)}`}
             >
               <StatCard
@@ -702,15 +694,6 @@ function App() {
                     : "No sunset"
                 }
                 detail={`${earliestProposedSunset?.dateLabel ?? "Polar conditions"} in ${primary.city}`}
-              />
-              <StatCard
-                label="Days shifted vs. current law"
-                value={String(changedDays)}
-                detail={
-                  primaryOffsets.observesDst
-                    ? "One hour later on the clock"
-                    : "This jurisdiction does not change clocks"
-                }
               />
             </div>
 
