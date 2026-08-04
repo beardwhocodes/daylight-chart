@@ -611,7 +611,9 @@ function App() {
                   lines, so they only belong on screen when that chart is drawn. */}
               {(chartView.compare || chartView.variant === "classic") && (
                 <>
-                  <div className="text-muted-foreground mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs">
+                  {/* Padded on both sides: the rule below comes from SeriesControls,
+                      so a top-only pad left the key sitting on that rule. */}
+                  <div className="text-muted-foreground mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t py-4 text-xs">
                     {/* Hue means the event, so the first key on the row says so.
                         Shade within the hue is what separates places. */}
                     <span className="flex items-center gap-2">
