@@ -41,7 +41,7 @@ const SKY = {
 } as const;
 
 const W = 1000;
-const H = 360;
+const H = 372;
 const PAD_X = 20;
 const TOP = 26;
 const PLOT_H = 292;
@@ -278,11 +278,37 @@ export function SunPathPanel({
           </text>
         ))}
 
-        {Array.from({ length: 9 }, (_, index) => index * 3).map((hour) => (
-          <text key={hour} x={x(hour * 60)} y={H - 10} textAnchor="middle" fill="currentColor" opacity={0.55} fontSize={11}>
-            {hourLabel(hour)}
-          </text>
-        ))}
+        {/* An hour mark for every hour, labelled every second one. Sunrise moves
+            by minutes between scenarios, so a scale that only spoke every three
+            hours left the whole transition floating between two labels. */}
+        {Array.from({ length: 25 }, (_, hour) => {
+          const labelled = hour % 2 === 0;
+          return (
+            <g key={hour}>
+              <line
+                x1={x(hour * 60)}
+                x2={x(hour * 60)}
+                y1={TOP + PLOT_H + 2}
+                y2={TOP + PLOT_H + (labelled ? 8 : 5)}
+                stroke="currentColor"
+                strokeWidth={1}
+                opacity={labelled ? 0.4 : 0.22}
+              />
+              {labelled && (
+                <text
+                  x={x(hour * 60)}
+                  y={H - 8}
+                  textAnchor="middle"
+                  fill="currentColor"
+                  opacity={0.55}
+                  fontSize={10.5}
+                >
+                  {hourLabel(hour)}
+                </text>
+              )}
+            </g>
+          );
+        })}
       </svg>
 
       <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">

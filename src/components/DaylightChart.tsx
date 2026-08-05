@@ -91,10 +91,20 @@ export function DaylightChart({ points, series, hiddenSeries, places, year, mark
     return [low, high];
   }, [markers, points, visibleSeries]);
 
+  /**
+   * Labelled every two hours, ruled every hour. Sunrise shifts by minutes
+   * between scenarios, so a two-hour rule left the reader interpolating across
+   * the very gap the chart exists to show. When the visible span is short
+   * enough for the labels to fit, every hour is named.
+   */
+  const span = domain[1] - domain[0];
+  const labelStep = span <= 8 * 60 ? 60 : 120;
   const ticks = Array.from(
-    { length: Math.floor((domain[1] - domain[0]) / 120) + 1 },
-    (_, index) => domain[0] + index * 120,
+    { length: Math.floor(span / labelStep) + 1 },
+    (_, index) => domain[0] + index * labelStep,
   );
+  const minorTicks = Array.from({ length: Math.floor(span / 60) + 1 }, (_, index) => domain[0] + index * 60)
+    .filter((minute) => !ticks.includes(minute));
   const dstStartDay = Math.floor(nthWeekday(year, 3, 7, 2).diff(DateTime.local(year, 1, 1), "days").days) + 1;
   const dstEndDay = Math.floor(nthWeekday(year, 11, 7, 1).diff(DateTime.local(year, 1, 1), "days").days) + 1;
   const showDstMarkers =
@@ -111,6 +121,10 @@ export function DaylightChart({ points, series, hiddenSeries, places, year, mark
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={points} margin={{ top: 16, right: 16, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={palette.grid} vertical={false} />
+            {/* Drawn before the series so a rule never sits on top of a line. */}
+            {minorTicks.map((minute) => (
+              <ReferenceLine key={`minor-${minute}`} y={minute} stroke={palette.grid} strokeOpacity={0.45} />
+            ))}
             <XAxis
               dataKey="day"
               type="number"
@@ -130,6 +144,7 @@ export function DaylightChart({ points, series, hiddenSeries, places, year, mark
               tickLine={false}
               tickMargin={8}
               width={use24Hour ? 44 : 58}
+              minTickGap={0}
               tick={{ fill: palette.axis, fontSize: 11 }}
             />
             <Tooltip

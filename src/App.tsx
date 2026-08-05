@@ -46,7 +46,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { shareUrl, useSettings, yearOptions } from "@/hooks/useSettings";
+import { shareUrl, toShareQuery, useSettings, yearOptions } from "@/hooks/useSettings";
 import { useTheme } from "@/hooks/useTheme";
 import { chartPalette, placeSwatch } from "@/lib/chart-theme";
 import { CHART_PARAM, readChartView, type ChartVariant } from "@/lib/chart-variant";
@@ -212,10 +212,13 @@ function App() {
     else params.set(CHART_PARAM, variant);
     // Written straight to the URL because writeUrl in useSettings rebuilds the
     // whole query string from window.location and would otherwise overwrite it.
+    // Serialised the same way, or this rewrite would escape the commas and
+    // colons that the rest of the link deliberately leaves alone.
+    const query = toShareQuery(params);
     window.history.replaceState(
       null,
       "",
-      `${window.location.pathname}?${params.toString()}${window.location.hash}`,
+      `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`,
     );
   };
   // The sun path shows one day. December 21 is where the scenarios differ most,
