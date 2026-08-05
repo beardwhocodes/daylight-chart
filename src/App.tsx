@@ -46,7 +46,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useSettings, yearOptions } from "@/hooks/useSettings";
+import { shareUrl, useSettings, yearOptions } from "@/hooks/useSettings";
 import { useTheme } from "@/hooks/useTheme";
 import { chartPalette, placeSwatch } from "@/lib/chart-theme";
 import { CHART_PARAM, readChartView, type ChartVariant } from "@/lib/chart-variant";
@@ -290,7 +290,9 @@ function App() {
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      // Built from the settings rather than read off the address bar, which
+      // now carries only what differs from the defaults.
+      await navigator.clipboard.writeText(shareUrl(settings));
       toast.success("Shareable link copied");
     } catch {
       toast.error("Copying is blocked in this browser.");
