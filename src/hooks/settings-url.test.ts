@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildParams, readSearch } from "./useSettings";
+import { buildParams, readSearch, toShareQuery } from "./useSettings";
 import { defaultPlace } from "@/lib/locations";
 import type { AppSettings, Place } from "@/types";
 
@@ -30,17 +30,17 @@ describe("settings in the address bar", () => {
 
   it("writes only what was changed", () => {
     const params = buildParams({ ...defaults, use24Hour: true }, false);
-    expect(params.toString()).toBe("clock=24");
+    expect(params.toString()).toBe("c=24");
 
     const withPlace = buildParams({ ...defaults, places: [chicago] }, false);
-    expect(withPlace.getAll("place")).toHaveLength(1);
-    expect(withPlace.has("year")).toBe(false);
-    expect(withPlace.has("events")).toBe(false);
+    expect(withPlace.getAll("p")).toHaveLength(1);
+    expect(withPlace.has("y")).toBe(false);
+    expect(withPlace.has("e")).toBe(false);
   });
 
   it("spells everything out for a shared link", () => {
     const params = buildParams(defaults, true);
-    for (const key of ["place", "year", "events", "scenarios"]) {
+    for (const key of ["p", "y", "e", "s"]) {
       expect(params.has(key)).toBe(true);
     }
   });
@@ -55,7 +55,7 @@ describe("settings in the address bar", () => {
       markers: [{ id: "m", kind: "morning", time: "07:30", label: "Morning commute" }],
       use24Hour: true,
     };
-    const restored = readSearch(defaults, buildParams(chosen, true).toString());
+    const restored = readSearch(defaults, toShareQuery(buildParams(chosen, true)));
     expect(restored.places.map((place) => place.id)).toEqual(["city:Chicago:IL"]);
     expect(restored.year).toBe(chosen.year);
     expect(restored.events).toEqual(chosen.events);
@@ -71,7 +71,7 @@ describe("settings in the address bar", () => {
    * ago instead of leaving it alone.
    */
   it("leaves the year alone when a link does not name one", () => {
-    const restored = readSearch(defaults, "?place=city%3AChicago%3AIL%7CChicago%7CIL%7C%7C41.8781%7C-87.6298%7CAmerica%2FChicago");
+    const restored = readSearch(defaults, "?p=Chicago,IL,41.8781,-87.6298");
     expect(restored.year).toBe(currentYear);
     expect(restored.places[0].city).toBe("Chicago");
   });
@@ -83,7 +83,7 @@ describe("settings in the address bar", () => {
       hiddenSeries: ["a"],
       markers: [{ id: "m", kind: "evening", time: "17:30", label: "Home" }],
     };
-    const restored = readSearch(stored, "?clock=24");
+    const restored = readSearch(stored, "?c=24");
     expect(restored.hiddenSeries).toEqual(["a"]);
     expect(restored.markers).toHaveLength(1);
   });
@@ -94,7 +94,37 @@ describe("settings in the address bar", () => {
   });
 
   it("still clamps a year that is out of range", () => {
-    expect(readSearch(defaults, "?year=1200").year).toBe(currentYear - 10);
-    expect(readSearch(defaults, "?year=9999").year).toBe(currentYear + 10);
+    expect(readSearch(defaults, "?y=1200").year).toBe(currentYear - 10);
+    expect(readSearch(defaults, "?y=9999").year).toBe(currentYear + 10);
+  });
+
+  it("keeps a link short and readable", () => {
+    const query = toShareQuery(buildParams({ ...defaults, use24Hour: true }, true));
+    expect(query).not.toMatch(/%2C|%3A|%7C/);
+    expect(query.length).toBeLessThan(80);
+  });
+
+  /** Links shared before the short form must still open. */
+  it("still reads the long keys, long names and piped places", () => {
+    const legacy =
+      "?place=city%3AChicago%3AIL%7CChicago%7CIL%7C%7C41.8781%7C-87.6298%7CAmerica%2FChicago" +
+      "&year=2027&events=sunrise,sunset,dawn&scenarios=current,permanentStandard" +
+      "&marker=morning%7C07%3A30%7CMorning+commute&clock=24";
+    const restored = readSearch(defaults, legacy);
+    expect(restored.places[0]).toMatchObject({ city: "Chicago", timezone: "America/Chicago" });
+    expect(restored.year).toBe(2027);
+    expect(restored.events).toEqual(["sunrise", "sunset", "dawn"]);
+    expect(restored.scenarios).toEqual(["current", "permanentStandard"]);
+    expect(restored.markers[0]).toMatchObject({ time: "07:30", label: "Morning commute", kind: "morning" });
+    expect(restored.use24Hour).toBe(true);
+  });
+
+  it("derives a place's id and timezone rather than carrying them", () => {
+    const [place] = readSearch(defaults, "?p=Chicago,IL,41.8781,-87.6298").places;
+    expect(place.timezone).toBe("America/Chicago");
+    expect(place.id).toBe("city:Chicago:IL");
+    const [zipped] = readSearch(defaults, "?p=Chicago,IL,41.8781,-87.6298,60601").places;
+    expect(zipped.id).toBe("zip:60601");
+    expect(zipped.zip).toBe("60601");
   });
 });

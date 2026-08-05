@@ -68,11 +68,46 @@ export async function nearestPlace(latitude: number, longitude: number): Promise
   return cityToPlace(best);
 }
 
-export function serializePlace(place: Place): string {
-  return [place.id, place.city, place.state, place.zip ?? "", place.latitude, place.longitude, place.timezone].join("|");
+/**
+ * A place in a link: `city,state,lat,lon` with an optional trailing ZIP.
+ *
+ * The id and the timezone are left out because both are derived, not chosen:
+ * the id is built from the same city and state, and the timezone is whatever
+ * `tzlookup` returns for those coordinates, which is exactly how a place is
+ * built in the first place. Carrying them tripled the length of every link.
+ */
+export function encodePlace(place: Place): string {
+  const parts = [place.city, place.state, place.latitude, place.longitude];
+  if (place.zip) parts.push(place.zip);
+  return parts.join(",");
 }
 
-export function deserializePlace(value: string): Place | null {
+export function decodePlace(value: string): Place | null {
+  // Links shared before the short form used pipes and carried every field.
+  if (value.includes("|")) return decodeLegacyPlace(value);
+
+  const [city, state, lat, lng, zip] = value.split(",");
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  if (!city || !state || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  let timezone: string;
+  try {
+    timezone = tzlookup(latitude, longitude);
+  } catch {
+    return null;
+  }
+  return {
+    id: zip ? `zip:${zip}` : `city:${city}:${state}`,
+    city,
+    state,
+    zip: zip || undefined,
+    latitude,
+    longitude,
+    timezone,
+  };
+}
+
+function decodeLegacyPlace(value: string): Place | null {
   const [id, city, state, zip, lat, lng, timezone] = value.split("|");
   const latitude = Number(lat);
   const longitude = Number(lng);
